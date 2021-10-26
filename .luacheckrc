@@ -111,3 +111,10 @@ files["test/replication/replica_quorum.lua"] = {
         "nonexistent_uri",
     },
 }
+
+files["test/vinyl-luatest/update_optimize_test.lua"] = {
+    globals = {
+        "space",
+        "index",
+    },
+}
