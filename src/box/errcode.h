@@ -285,6 +285,7 @@ struct errcode_record {
 	/*227 */_(ER_UNABLE_TO_PROCESS_OUT_OF_STREAM, "Unable to process %s request out of stream") \
 	/*228 */_(ER_TRANSACTION_TIMEOUT,       "Transaction has been aborted by timeout") \
 	/*229 */_(ER_ACTIVE_TIMER,              "Operation is not permitted if timer is already running") \
+	/*230 */_(ER_CREATE_CONSTRAINT,		"Failed to create constraint '%s' in space '%s': %s") \
 
 /*
  * !IMPORTANT! Please follow instructions at start of the file
