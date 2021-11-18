@@ -125,7 +125,7 @@ session_watch(struct session *session, const char *key,
 	if (h == NULL)
 		h = session->watchers = mh_strnptr_new();
 	uint32_t key_hash = mh_strn_hash(key, key_len);
-	struct mh_strnptr_key_t k = {key, key_len, key_hash};
+	struct mh_strnptr_key_t k = {key, (uint32_t)key_len, key_hash};
 	mh_int_t i = mh_strnptr_find(h, &k, NULL);
 	/* If a watcher is already registered, acknowledge a notification. */
 	if (i != mh_end(h)) {
@@ -144,7 +144,7 @@ session_watch(struct session *session, const char *key,
 			     &watcher->base);
 	key = watcher_key(&watcher->base, &key_len);
 	struct mh_strnptr_node_t n = {
-		key, key_len, key_hash, watcher
+		key, (uint32_t)key_len, key_hash, watcher
 	};
 	mh_strnptr_put(h, &n, NULL, NULL);
 }
@@ -156,7 +156,7 @@ session_unwatch(struct session *session, const char *key,
 	struct mh_strnptr_t *h = session->watchers;
 	if (h == NULL)
 		return;
-	mh_int_t i = mh_strnptr_find_inp(h, key, key_len);
+	mh_int_t i = mh_strnptr_find_str(h, key, key_len);
 	if (i == mh_end(h))
 		return;
 	struct session_watcher *watcher =
