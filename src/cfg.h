@@ -37,6 +37,9 @@
 extern "C" {
 #endif /* defined(__cplusplus) */
 
+void
+cfg_setb(const char *param, bool value);
+
 int
 cfg_geti(const char *param);
 
