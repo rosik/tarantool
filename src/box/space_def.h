@@ -75,6 +75,8 @@ struct space_opts {
 	bool is_sync;
 	/** SQL statement that produced this space. */
 	char *sql;
+	/** Status of upgrade operation if any. */
+	struct space_upgrade *upgrade;
 };
 
 extern const struct space_opts space_opts_default;

@@ -563,6 +563,9 @@ space_add_constraint_id(struct space *space, struct constraint_id *id);
 struct constraint_id *
 space_pop_constraint_id(struct space *space, const char *name);
 
+bool
+space_is_upgraded(struct space *space);
+
 /*
  * Virtual method stubs.
  */

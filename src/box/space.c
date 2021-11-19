@@ -36,6 +36,7 @@
 #include "tuple_format.h"
 #include "trigger.h"
 #include "user.h"
+#include "upgrade.h"
 #include "session.h"
 #include "txn.h"
 #include "memtx_tx.h"
@@ -651,6 +652,13 @@ space_pop_constraint_id(struct space *space, const char *name)
 		mh_strnptr_node(ids, pos)->val;
 	mh_strnptr_del(ids, pos, NULL);
 	return id;
+}
+
+bool
+space_is_upgraded(struct space *space)
+{
+	return space->def->opts.upgrade != NULL &&
+	       space->def->opts.upgrade->status == UPGRADE_INPROGRESS;
 }
 
 /* {{{ Virtual method stubs */

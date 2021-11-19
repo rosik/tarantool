@@ -43,6 +43,7 @@ const struct space_opts space_opts_default = {
 	/* .view = */ false,
 	/* .is_sync = */ false,
 	/* .sql        = */ NULL,
+	/* .upgrade = */ NULL,
 };
 
 const struct opt_def space_opts_reg[] = {
@@ -100,6 +101,7 @@ space_def_dup_opts(struct space_def *def, const struct space_opts *opts)
 			return -1;
 		}
 	}
+	def->opts.upgrade = NULL;
 	return 0;
 }
 
@@ -280,6 +282,7 @@ space_def_delete(struct space_def *def)
 void
 space_opts_destroy(struct space_opts *opts)
 {
+	assert(opts->upgrade == NULL);
 	free(opts->sql);
 	TRASH(opts);
 }
