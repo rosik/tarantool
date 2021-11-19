@@ -84,6 +84,7 @@
 #include "watcher.h"
 #include "trivia/util.h"
 #include "version.h"
+#include "upgrade.h"
 
 static char status[64] = "unknown";
 
@@ -2375,6 +2376,12 @@ box_select(uint32_t space_id, uint32_t index_id,
 	uint32_t found = 0;
 	struct tuple *tuple;
 	port_c_create(port);
+	/*
+	 * In case of vinyl iterator_next may yield. During yield space
+	 * can be altered and space pointer can turn out to be obsolete
+	 * (containing trash).
+	 */
+	bool is_upgraded = space_is_upgraded(space);
 	while (found < limit) {
 		rc = iterator_next(it, &tuple);
 		if (rc != 0 || tuple == NULL)
@@ -2382,6 +2389,13 @@ box_select(uint32_t space_id, uint32_t index_id,
 		if (offset > 0) {
 			offset--;
 			continue;
+		}
+		if (is_upgraded) {
+			struct tuple *upgraded_tuple = NULL;
+			if (space_upgrade_convert_tuple(space, tuple,
+							&upgraded_tuple) != 0)
+				return -1;
+			tuple = upgraded_tuple;
 		}
 		rc = port_c_add_tuple(port, tuple);
 		if (rc != 0)
