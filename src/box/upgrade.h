@@ -29,6 +29,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include "tt_uuid.h"
 
 struct func;
 struct space;
@@ -73,6 +74,13 @@ struct space_upgrade {
 	 * (space->tuple_format).
 	 */
 	struct tuple_format *format;
+
+	/**
+	 * uuid of the host i.e. instance which launched upgrade process.
+	 * All other instances are switched to read-only mode and apply
+	 * only rows received from master.
+	 */
+	struct tt_uuid host_uuid;
 };
 
 extern const char *upgrade_status_strs[];
@@ -96,6 +104,19 @@ upgrade_status_by_name(const char *name, uint32_t name_len)
 extern "C" {
 #endif /* defined(__cplusplus) */
 
+/**
+ * Set read-only mode for replication instances. Save previous mode to
+ * @a was_ro static variable. After the last upgrade is finished,
+ * space_upgrade_reset_ro() should be called - it restores original read-only
+ * mode.
+ */
+void
+space_upgrade_set_ro(struct space_upgrade *upgrade);
+
+void
+space_upgrade_reset_ro(struct space_upgrade *upgrade);
+
+/** Release resources related to space_upgrade and free structure itself. */
 void
 space_upgrade_delete(struct space_upgrade *upgrade);
 

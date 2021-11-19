@@ -1,0 +1,297 @@
+-- test-run result file version 2
+test_run = require('test_run').new()
+ | ---
+ | ...
+
+test_run:cmd('create server master with script="replication/master1.lua"')
+ | ---
+ | - true
+ | ...
+test_run:cmd('create server rw with rpl_master=master,\
+                                         script="replication/replica1.lua"')
+ | ---
+ | - true
+ | ...
+test_run:cmd('create server ro with rpl_master=master,\
+                                         script="replication/replica2.lua"')
+ | ---
+ | - true
+ | ...
+
+test_run:cmd('start server master')
+ | ---
+ | - true
+ | ...
+test_run:switch('master')
+ | ---
+ | - true
+ | ...
+box.schema.user.grant('guest', 'replication')
+ | ---
+ | ...
+box.cfg{replication_timeout=1}
+ | ---
+ | ...
+t = box.schema.space.create('test')
+ | ---
+ | ...
+_ = box.space.test:create_index('pk')
+ | ---
+ | ...
+t:format({{"f1", "unsigned"}, {"f2", "unsigned"}})
+ | ---
+ | ...
+
+test_run:cmd('start server rw with args="1"')
+ | ---
+ | - true
+ | ...
+test_run:cmd('start server ro with args="1"')
+ | ---
+ | - true
+ | ...
+test_run:switch('ro')
+ | ---
+ | - true
+ | ...
+box.cfg{read_only=true}
+ | ---
+ | ...
+test_run:switch('master')
+ | ---
+ | - true
+ | ...
+row_cnt = 20
+ | ---
+ | ...
+
+for i = 1,row_cnt do\
+    box.space.test:replace({i, i})\
+end
+ | ---
+ | ...
+box.error.injection.set('ERRINJ_SPACE_UPGRADE_DELAY', true)
+ | ---
+ | - ok
+ | ...
+
+test_run:cmd("setopt delimiter ';'")
+ | ---
+ | - true
+ | ...
+body   = [[
+function(tuple)
+    local new_tuple = {}
+    new_tuple[1] = tuple[1]
+    new_tuple[2] = tostring(tuple[2])
+    return new_tuple
+end
+]];
+ | ---
+ | ...
+test_run:cmd("setopt delimiter ''");
+ | ---
+ | - true
+ | ...
+box.schema.func.create("upgrade_func", {body = body, is_deterministic = true, is_sandboxed = true})
+ | ---
+ | ...
+new_format = {{name="x", type="unsigned"}, {name="y", type="string"}}
+ | ---
+ | ...
+
+f = box.space.test:upgrade({mode = "notest", func = "upgrade_func", format = new_format, background = true})
+ | ---
+ | ...
+t = box.space._space_upgrade:select()
+ | ---
+ | ...
+assert(t[1][2] == "inprogress")
+ | ---
+ | - true
+ | ...
+
+test_run:switch('rw')
+ | ---
+ | - true
+ | ...
+t = box.space._space_upgrade:select()
+ | ---
+ | ...
+assert(t[1][2] == "inprogress")
+ | ---
+ | - true
+ | ...
+assert(box.cfg.read_only == true)
+ | ---
+ | - true
+ | ...
+t = box.space.test.index[0]:get({15})
+ | ---
+ | ...
+assert(t[2] == 15)
+ | ---
+ | - true
+ | ...
+t = box.space.test.index[0]:get({5})
+ | ---
+ | ...
+assert(t[2] == "5")
+ | ---
+ | - true
+ | ...
+-- Should fail due to read_only status.
+box.space.test:replace({100, 100})
+ | ---
+ | - error: Can't modify data on a read-only instance - box.cfg.read_only is true
+ | ...
+box.space.test:replace({100, 'asd'})
+ | ---
+ | - error: Can't modify data on a read-only instance - box.cfg.read_only is true
+ | ...
+
+test_run:switch('ro')
+ | ---
+ | - true
+ | ...
+t = box.space._space_upgrade:select()
+ | ---
+ | ...
+assert(t[1][2] == "inprogress")
+ | ---
+ | - true
+ | ...
+assert(box.cfg.read_only == true)
+ | ---
+ | - true
+ | ...
+t = box.space.test.index[0]:get({15})
+ | ---
+ | ...
+assert(t[2] == 15)
+ | ---
+ | - true
+ | ...
+t = box.space.test.index[0]:get({5})
+ | ---
+ | ...
+assert(t[2] == "5")
+ | ---
+ | - true
+ | ...
+
+test_run:switch('master')
+ | ---
+ | - true
+ | ...
+box.error.injection.set('ERRINJ_SPACE_UPGRADE_DELAY', false)
+ | ---
+ | - ok
+ | ...
+f:set_joinable(true)
+ | ---
+ | ...
+f:join()
+ | ---
+ | - true
+ | ...
+
+t = box.space._space_upgrade:select()
+ | ---
+ | ...
+assert(t[1] == nil)
+ | ---
+ | - true
+ | ...
+
+test_run:switch('rw')
+ | ---
+ | - true
+ | ...
+t = box.space.test.index[0]:get({20})
+ | ---
+ | ...
+assert(t[2] == "20")
+ | ---
+ | - true
+ | ...
+
+assert(box.cfg.read_only == false)
+ | ---
+ | - true
+ | ...
+box.space.test:replace({100, 100})
+ | ---
+ | - error: 'Tuple field 2 (y) type does not match one required by operation: expected
+ |     string, got unsigned'
+ | ...
+box.space.test:replace({100, 'asd'})
+ | ---
+ | - [100, 'asd']
+ | ...
+t = box.space._space_upgrade:select()
+ | ---
+ | ...
+assert(t[1] == nil)
+ | ---
+ | - true
+ | ...
+
+test_run:switch('ro')
+ | ---
+ | - true
+ | ...
+assert(box.cfg.read_only == true)
+ | ---
+ | - true
+ | ...
+t = box.space._space_upgrade:select()
+ | ---
+ | ...
+assert(t[1] == nil)
+ | ---
+ | - true
+ | ...
+
+test_run:switch('master')
+ | ---
+ | - true
+ | ...
+
+box.space.test:drop()
+ | ---
+ | ...
+box.schema.func.drop("upgrade_func")
+ | ---
+ | ...
+
+-- Cleanup.
+test_run:switch('default')
+ | ---
+ | - true
+ | ...
+test_run:cmd('stop server ro')
+ | ---
+ | - true
+ | ...
+test_run:cmd('stop server rw')
+ | ---
+ | - true
+ | ...
+test_run:cmd('stop server master')
+ | ---
+ | - true
+ | ...
+test_run:cmd('delete server rw')
+ | ---
+ | - true
+ | ...
+test_run:cmd('delete server ro')
+ | ---
+ | - true
+ | ...
+test_run:cmd('delete server master')
+ | ---
+ | - true
+ | ...
+

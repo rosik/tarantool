@@ -6033,6 +6033,7 @@ on_create_space_upgrade_rollback(struct trigger *trigger, void * /* event */)
 	 * turn out that space is not locked.
 	 */
 	space_upgrade_reset_alter_lock(upgrade);
+	space_upgrade_reset_ro(upgrade);
 	space_upgrade_delete(space->def->opts.upgrade);
 	space->def->opts.upgrade = NULL;
 	if (trigger_run(&on_alter_space, space) != 0)
@@ -6048,6 +6049,7 @@ on_delete_space_upgrade_rollback(struct trigger *trigger, void * /* event */)
 	assert(space != NULL);
 	assert(space->def->opts.upgrade == NULL);
 	space->def->opts.upgrade = upgrade;
+	space_upgrade_set_ro(upgrade);
 	if (trigger_run(&on_alter_space, space) != 0)
 		return -1;
 	return 0;
@@ -6176,6 +6178,10 @@ space_upgrade_decode(struct tuple *tuple)
 		return NULL;
 	tuple_format_ref(format);
 	upgrade->format = format;
+	/* Decode host uuid. */
+	if (tuple_field_uuid(tuple, BOX_SPACE_UPGRADE_FIELD_UUID,
+			     &upgrade->host_uuid) != 0)
+		return NULL;
 	upgrade_guard.is_active = false;
 	return upgrade;
 }
@@ -6282,6 +6288,8 @@ on_replace_dd_space_upgrade(struct trigger *trigger, void *event)
 			return -1;
 		txn_stmt_on_rollback(stmt, on_rollback);
 		space->def->opts.upgrade = upgrade;
+		/* If it's not the host launched upgrade, set read-only mode. */
+		space_upgrade_set_ro(upgrade);
 		upgrade_guard.is_active = false;
 	} else if (new_tuple == NULL) { /* DELETE */
 		uint32_t id;
@@ -6312,6 +6320,7 @@ on_replace_dd_space_upgrade(struct trigger *trigger, void *event)
 		if (on_commit == NULL)
 			return -1;
 		space->def->opts.upgrade = NULL;
+		space_upgrade_reset_ro(upgrade);
 		txn_stmt_on_rollback(stmt, on_rollback);
 		txn_stmt_on_commit(stmt, on_commit);
 	} else { /* REPLACE */
@@ -6333,6 +6342,14 @@ on_replace_dd_space_upgrade(struct trigger *trigger, void *event)
 		if (space_upgrade_check_status_compatibility(space, old_upgrade,
 							     new_upgrade) != 0)
 			return -1;
+		if (! tt_uuid_is_equal(&new_upgrade->host_uuid,
+				       &old_upgrade->host_uuid)) {
+			diag_set(ClientError, ER_UPGRADE,
+				 tt_sprintf("cant change uuid: old %s, new %s",
+					    tt_uuid_str(&old_upgrade->host_uuid),
+					    tt_uuid_str(&new_upgrade->host_uuid)));
+			return -1;
+		}
 		struct trigger *on_rollback =
 			txn_alter_trigger_new(on_alter_space_upgrade_rollback,
 					      old_upgrade);
@@ -6347,6 +6364,7 @@ on_replace_dd_space_upgrade(struct trigger *trigger, void *event)
 		txn_stmt_on_commit(stmt, on_commit);
 		space->def->opts.upgrade = new_upgrade;
 		space_upgrade_reset_alter_lock(new_upgrade);
+		space_upgrade_set_ro(new_upgrade);
 		upgrade_guard.is_active = false;
 	}
 	/* Upgrade Lua object and reset space.upgrade_state. */
