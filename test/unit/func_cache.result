@@ -51,3 +51,70 @@ ok 16 - ok
 ok 17 - ok
 ok 18 - ok
 	*** func_cache_pin_test_several: done ***
+	*** func_cache_subscribe_test_one ***
+1..3
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+	*** func_cache_subscribe_test_one: done ***
+	*** func_cache_subscribe_test_several ***
+1..6
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+ok 4 - ok
+ok 5 - ok
+ok 6 - ok
+	*** func_cache_subscribe_test_several: done ***
+	*** func_cache_subscribe_test_pair ***
+1..6
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+ok 4 - ok
+ok 5 - ok
+ok 6 - ok
+	*** func_cache_subscribe_test_pair: done ***
+	*** func_cache_subscribe_test_one_unsub ***
+1..2
+ok 1 - ok
+ok 2 - ok
+	*** func_cache_subscribe_test_one_unsub: done ***
+	*** func_cache_subscribe_test_several_unsub ***
+1..5
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+ok 4 - ok
+ok 5 - ok
+	*** func_cache_subscribe_test_several_unsub: done ***
+	*** func_cache_subscribe_test_pair_unsub1 ***
+1..5
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+ok 4 - ok
+ok 5 - ok
+	*** func_cache_subscribe_test_pair_unsub1: done ***
+	*** func_cache_subscribe_test_pair_unsub2 ***
+1..5
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+ok 4 - ok
+ok 5 - ok
+	*** func_cache_subscribe_test_pair_unsub2: done ***
+	*** func_cache_subscribe_test_pair_unsub_fifo ***
+1..4
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+ok 4 - ok
+	*** func_cache_subscribe_test_pair_unsub_fifo: done ***
+	*** func_cache_subscribe_test_pair_unsub_lifo ***
+1..4
+ok 1 - ok
+ok 2 - ok
+ok 3 - ok
+ok 4 - ok
+	*** func_cache_subscribe_test_pair_unsub_lifo: done ***

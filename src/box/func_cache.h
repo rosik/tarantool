@@ -43,6 +43,34 @@ struct func_cache_holder {
 };
 
 /**
+ * Function subscription: If there's no function you may subscribe on its
+ * addition to func cache.
+ */
+struct func_cache_subscription;
+
+/**
+ * Subscription function definition. Is called when the function is added
+ * to cache. This function is allowed to destroy and delete the subscription
+ * object; there's no need to do something with link member in it.
+ */
+typedef void (*func_cache_subscription_f)(struct func_cache_subscription *sub,
+					  struct func *func);
+
+/**
+ * Subscription definition. Is passed to the callback.
+ */
+struct func_cache_subscription {
+	/** All subscription are linked into headless ring list by this link. */
+	struct rlist link;
+	/** Callback to call when the function is added. */
+	func_cache_subscription_f callback;
+	/** Name of the function on which the subscription is. */
+	const char *func_name;
+	/** Length of the name. */
+	uint32_t func_name_len;
+};
+
+/**
  * Initialize function cache storage.
  */
 void
@@ -113,6 +141,25 @@ func_cache_unpin(struct func *func, struct func_cache_holder *holder);
  */
 bool
 func_cache_is_pinned(struct func *func, enum func_cache_holder_type *type);
+
+/**
+ * Subscribe @a subscr on addition of function with given @a func_name
+ * (i.e. call @a callback when the function is added to cache).
+ * Note that given name string must exist while subscription exists.
+ * The function must not be in cache (asserted).
+ */
+void
+func_cache_subscribe_by_name(const char *func_name, uint32_t func_name_len,
+			     struct func_cache_subscription *subscr,
+			     func_cache_subscription_f callback);
+
+/**
+ * Revert subscription above. The subscription must exist.
+ * The function must not be in cache (asserted).
+ */
+void
+func_cache_unsubscribe_by_name(const char *func_name, uint32_t func_name_len,
+			       struct func_cache_subscription *subscr);
 
 #if defined(__cplusplus)
 } /* extern "C" */
