@@ -34,6 +34,8 @@
 #include <string.h>
 #include <small/rlist.h>
 
+#include "memtx_engine.h"
+
 RLIST_HEAD(engines);
 
 /**
@@ -255,6 +257,16 @@ engine_reset_stat(void)
 	struct engine *engine;
 	engine_foreach(engine)
 		engine->vtab->reset_stat(engine);
+}
+
+bool
+engine_is_in_initial_recovery()
+{
+	struct engine *engine;
+	engine_foreach(engine)
+		if (engine->id == 0)
+			return memtx_engine_is_in_initial_recovery(engine);
+	panic("memtx engine was not found!");
 }
 
 /* {{{ Virtual method stubs */

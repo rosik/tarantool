@@ -300,6 +300,9 @@ memtx_index_def_change_requires_rebuild(struct index *index,
 void
 memtx_set_tuple_format_vtab(const char *allocator_name);
 
+bool
+memtx_engine_is_in_initial_recovery(struct engine *engine);
+
 #if defined(__cplusplus)
 } /* extern "C" */
 

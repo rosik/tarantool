@@ -387,6 +387,9 @@ engine_memory_stat(struct engine_memory_stat *stat);
 void
 engine_reset_stat(void);
 
+bool
+engine_is_in_initial_recovery();
+
 /*
  * Virtual method stubs.
  */

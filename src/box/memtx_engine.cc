@@ -1133,6 +1133,13 @@ memtx_set_tuple_format_vtab(const char *allocator_name)
 	}
 }
 
+bool
+memtx_engine_is_in_initial_recovery(struct engine *engine)
+{
+	struct memtx_engine *memtx = (struct memtx_engine *)engine;
+	return memtx->state == MEMTX_INITIAL_RECOVERY;
+}
+
 struct memtx_engine *
 memtx_engine_new(const char *snap_dirname, bool force_recovery,
 		 uint64_t tuple_arena_max_size, uint32_t objsize_min,
