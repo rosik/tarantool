@@ -397,6 +397,7 @@ space_upgrade_test(uint32_t space_id)
 					     "%lu", processed_tuples);
 			tuple_ref(tuple);
 			fiber_sleep(0);
+			ERROR_INJECT_YIELD(ERRINJ_SPACE_UPGRADE_DELAY);
 			tuple_unref(tuple);
 		}
 	}
@@ -508,4 +509,38 @@ space_upgrade(uint32_t space_id)
 		rc = space_upgrade_delete_entry(space_id);
 	}
 	return rc;
+}
+
+static int
+space_upgrade_restore_f(va_list ap)
+{
+	uint32_t space_id = va_arg(ap, uint32_t);
+	return space_upgrade(space_id);
+}
+
+int
+space_upgrade_recovery(struct space *space, void *arg)
+{
+	(void) arg;
+	struct space_upgrade *upgrade = space->def->opts.upgrade;
+	if (upgrade == NULL)
+		return 0;
+	if (upgrade->status == UPGRADE_ERROR)
+		return 0;
+	/* Cleanup test entries. */
+	if (upgrade->status == UPGRADE_TEST)
+		return space_upgrade_delete_entry(upgrade->space_id);
+	if (! tt_uuid_is_equal(&upgrade->host_uuid, &INSTANCE_UUID))
+		return 0;
+	assert(upgrade->status == UPGRADE_INPROGRESS);
+	char name[FIBER_NAME_MAX];
+	snprintf(name, sizeof(name), "%s:%d", "upgrade", upgrade->space_id);
+	struct fiber *f = fiber_new(name, space_upgrade_restore_f);
+	if (f == NULL)
+		return -1;
+	fiber_set_joinable(f, false);
+	say_info("Starting space %s upgrade in fiber %s", space->def->name, name);
+	assert(upgrade->space_id != 0);
+	fiber_start(f, upgrade->space_id);
+	return 0;
 }
