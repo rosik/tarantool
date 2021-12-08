@@ -563,6 +563,12 @@ box_process_rw(struct request *request, struct space *space,
 int
 boxk(int type, uint32_t space_id, const char *format, ...);
 
+/**
+ *
+ */
+void
+box_broadcast_election(void);
+
 #if defined(__cplusplus)
 } /* extern "C" */
 #endif /* defined(__cplusplus) */
