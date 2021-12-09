@@ -121,7 +121,7 @@ vy_stmt_env_create(struct vy_stmt_env *env)
 	env->tuple_format_vtab.tuple_chunk_new = NULL;
 	env->tuple_format_vtab.tuple_chunk_delete = NULL;
 	env->max_tuple_size = 1024 * 1024;
-	env->key_format = vy_stmt_format_new(env, NULL, 0, NULL, 0, 0, NULL);
+	env->key_format = vy_simple_stmt_format_new(env, NULL, 0);
 	if (env->key_format == NULL)
 		panic("failed to create vinyl key format");
 	tuple_format_ref(env->key_format);
@@ -134,14 +134,11 @@ vy_stmt_env_destroy(struct vy_stmt_env *env)
 }
 
 struct tuple_format *
-vy_stmt_format_new(struct vy_stmt_env *env, struct key_def *const *keys,
-		   uint16_t key_count, const struct field_def *fields,
-		   uint32_t field_count, uint32_t exact_field_count,
-		   struct tuple_dictionary *dict)
+vy_simple_stmt_format_new(struct vy_stmt_env *env,
+			  struct key_def *const *keys, uint16_t key_count)
 {
-	return tuple_format_new(&env->tuple_format_vtab, env, keys, key_count,
-				fields, field_count, exact_field_count, dict,
-				false, false);
+	return simple_tuple_format_new(&env->tuple_format_vtab,
+				       env, keys, key_count);
 }
 
 /**
