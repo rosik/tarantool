@@ -508,6 +508,7 @@ box.schema.space.create = function(name, options)
         is_local = 'boolean',
         temporary = 'boolean',
         is_sync = 'boolean',
+        constraint = 'string, table'
     }
     local options_defaults = {
         engine = 'memtx',
@@ -548,11 +549,13 @@ box.schema.space.create = function(name, options)
     local format = options.format and options.format or {}
     check_param(format, 'format', 'table')
     format = update_format(format)
+    local constraint = prepare_constraint(options.constraint)
     -- filter out global parameters from the options array
     local space_options = setmap({
         group_id = options.is_local and 1 or nil,
         temporary = options.temporary and true or nil,
-        is_sync = options.is_sync
+        is_sync = options.is_sync,
+        constraint = constraint,
     })
     _space:insert{id, uid, name, options.engine, options.field_count,
         space_options, format}

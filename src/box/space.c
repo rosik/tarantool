@@ -124,6 +124,11 @@ static int
 space_prepare_tuple_format(struct space_def *def, struct tuple_format *format)
 {
 	/* Set up constraints. */
+	for (size_t j = 0; j < format->constraint_count; j++) {
+		struct tuple_constraint *constr = &format->constraint[j];
+		if (tuple_constraint_func_init(constr, def->name) != 0)
+			return -1;
+	}
 	for (size_t i = 0; i < tuple_format_field_count(format); i++) {
 		struct tuple_field *field = tuple_format_field(format, i);
 		for (size_t j = 0; j < field->constraint_count; j++) {
@@ -142,6 +147,10 @@ static int
 space_abandon_tuple_format(struct tuple_format *format)
 {
 	/* Clean up constraints. */
+	for (size_t j = 0; j < format->constraint_count; j++) {
+		struct tuple_constraint *constr = &format->constraint[j];
+		constr->destroy(constr);
+	}
 	for (size_t i = 0; i < tuple_format_field_count(format); i++) {
 		struct tuple_field *field = tuple_format_field(format, i);
 		for (size_t j = 0; j < field->constraint_count; j++) {
