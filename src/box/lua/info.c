@@ -642,7 +642,7 @@ lbox_info_synchro(struct lua_State *L)
 	lua_setfield(L, -2, "len");
 	lua_pushnumber(L, queue->owner_id);
 	lua_setfield(L, -2, "owner");
-	lua_pushnumber(L, queue->promote_latch_cnt);
+	lua_pushnumber(L, queue->promote_latch_wait_cnt);
 	lua_setfield(L, -2, "waiters");
 	lua_setfield(L, -2, "queue");
 
