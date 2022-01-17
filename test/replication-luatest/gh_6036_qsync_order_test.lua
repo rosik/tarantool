@@ -1,5 +1,6 @@
 local t = require('luatest')
 local cluster = require('test.luatest_helpers.cluster')
+local asserts = require('test.luatest_helpers.asserts')
 local helpers = require('test.luatest_helpers')
 local json = require('json')
 local log = require('log')
@@ -44,6 +45,7 @@ g.after_each(function(cg)
 end)
 
 g.test_qsync_order = function(cg)
+    asserts:wait_fullmesh({cg.r1, cg.r2, cg.r3})
     --
     -- Create a synchro space on the master node and make
     -- sure the write processed just fine.
