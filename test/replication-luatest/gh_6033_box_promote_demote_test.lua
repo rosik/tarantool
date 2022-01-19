@@ -49,6 +49,7 @@ g.before_each(function(g)
         election_mode = 'off',
         read_only = false,
         replication_timeout = 0.1,
+        replication_synchro_quorum = 1,
         replication = {
             helpers.instance_uri('server_', 1),
             helpers.instance_uri('server_', 2),
