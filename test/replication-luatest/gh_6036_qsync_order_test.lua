@@ -97,14 +97,13 @@ g.test_qsync_order = function(cg)
     -- waiting for PROMOTE completion first. Note that we
     -- enter election_replica3 as well just to be sure the PROMOTE
     -- reached it.
-
     cg.r2:eval("box.ctl.promote()")
-    log.info(cg.r2:eval("box.info.synchro.queue.waiters"))
-    --assert(false)
-    --helpers:wait_cond('waiters', cg.r2, function()
-    --    return box.info.synchro.queue.waiters > 0
-    --end)
+    t.helpers.retrying({}, function()
+        return cg.r2:eval("return box.info.synchro.queue.waiters") > 0
+    end)
     --cg.r3:eval("box.error.injection.set('ERRINJ_WAL_DELAY', false)")
+    cg.r2:eval("box.space.test:insert{2}")
+    cg.r3:eval("box.error.injection.set('ERRINJ_WAL_DELAY', false)")
 
     -- --
     -- -- gh-6036: verify that terms are locked when we're inside journal
