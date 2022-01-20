@@ -70,10 +70,10 @@ end)
 -- Test that box_promote and box_demote
 -- will return 0 if server is not configured.
 g.test_unconfigured = function()
-    local ok, _ = pcall(box.ctl.promote)
+    local ok = pcall(box.ctl.promote)
     luatest.assert(ok, 'error while promoting unconfigured server')
 
-    local ok, _ = pcall(box.ctl.demote)
+    local ok = pcall(box.ctl.demote)
     luatest.assert(ok, 'error while demoting unconfigured server')
 end
 
@@ -83,7 +83,7 @@ g.test_leader_promote = function(g)
     g.server_1:box_config({election_mode = 'manual'})
     make_leader(g.server_1)
 
-    local ok, _ = g.server_1:exec(function()
+    local ok = g.server_1:exec(function()
         return pcall(box.ctl.promote)
     end)
     luatest.assert(ok, 'error while promoting leader')
@@ -101,7 +101,7 @@ g.test_raft_leader_promote = function(g)
     g.server_1:wait_election_state('leader')
 
     local ok = g.server_1:exec(function()
-        local ok, _ = pcall(box.ctl.promote)
+        local ok = pcall(box.ctl.promote)
         box.error.injection.set('ERRINJ_BOX_RAFT_SYNCHRO_QUEUE_DELAY', false)
         return ok
     end)
@@ -112,12 +112,12 @@ end
 g.test_follower_demote = function(g)
     g.server_1:box_config({election_mode = 'manual'})
 
-    local ok, _ = g.server_1:exec(function()
+    local ok = g.server_1:exec(function()
         return pcall(box.ctl.demote)
     end)
     luatest.assert(ok, 'error while demoting follower in manual mode')
 
-    local ok, _ = g.server_2:exec(function()
+    local ok = g.server_2:exec(function()
         return pcall(box.ctl.demote)
     end)
     luatest.assert(ok, 'error while demoting follower if off mode')
@@ -129,7 +129,7 @@ g.test_manual_leader_demote = function(g)
     g.server_1:box_config({election_mode = 'manual'})
     make_leader(g.server_1)
 
-    local ok, _ = g.server_1:exec(function()
+    local ok = g.server_1:exec(function()
         return pcall(box.ctl.demote)
     end)
     luatest.assert(ok, 'error while demoting leader in manual mode')
