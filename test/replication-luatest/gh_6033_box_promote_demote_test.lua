@@ -79,12 +79,10 @@ end
 
 -- Test that box_promote will return 0
 -- if server is already raft leader and limbo owner.
-g.before_test('test_leader_promote', function(g)
+g.test_leader_promote = function(g)
     g.server_1:box_config({election_mode = 'manual'})
     make_leader(g.server_1)
-end)
 
-g.test_leader_promote = function(g)
     local ok, _ = g.server_1:exec(function()
         return pcall(box.ctl.promote)
     end)
@@ -93,11 +91,9 @@ end
 
 -- Test that box_promote will return 0
 -- if server is already raft leader but not current limbo owner.
-g.before_test('test_raft_leader_promote', function(g)
-    g.server_1:box_config({election_mode = 'manual'})
-end)
-
 g.test_raft_leader_promote = function(g)
+    g.server_1:box_config({election_mode = 'manual'})
+
     g.server_1:exec(function()
         box.error.injection.set('ERRINJ_BOX_RAFT_SYNCHRO_QUEUE_DELAY', true)
         box.ctl.promote()
@@ -112,13 +108,10 @@ g.test_raft_leader_promote = function(g)
     luatest.assert(ok, 'error while promoting raft leader')
 end
 
--- Test that box_demote will return 0
--- if server is already follower.
-g.before_test('test_follower_demote', function(g)
-    g.server_1:box_config({election_mode = 'manual'})
-end)
-
+-- Test that box_demote will return 0 if server is already follower.
 g.test_follower_demote = function(g)
+    g.server_1:box_config({election_mode = 'manual'})
+
     local ok, _ = g.server_1:exec(function()
         return pcall(box.ctl.demote)
     end)
@@ -132,12 +125,10 @@ end
 
 -- Test that box_demote will return 0 for leader
 -- with election_mode = 'manual'.
-g.before_test('test_manual_leader_demote', function(g)
+g.test_manual_leader_demote = function(g)
     g.server_1:box_config({election_mode = 'manual'})
     make_leader(g.server_1)
-end)
 
-g.test_manual_leader_demote = function(g)
     local ok, _ = g.server_1:exec(function()
         return pcall(box.ctl.demote)
     end)
@@ -170,11 +161,9 @@ end
 
 -- Test that box_promote will return box.error.UNSUPPORTED
 -- when trying to promote voter
-g.before_test('test_voter_promote', function(g)
-    g.server_1:box_config({election_mode = 'voter'})
-end)
-
 g.test_voter_promote = function(g)
+    g.server_1:box_config({election_mode = 'voter'})
+
     local ok, err = g.server_1:exec(function()
         return pcall(box.ctl.promote)
     end)
@@ -216,15 +205,13 @@ end
 
 -- Test interfering demotion for election_mode = 'off'
 -- while in WAL delay
-g.before_test('test_wal_interfering_demote', function(g)
+g.test_wal_interfering_demote = function(g)
     g.server_1:exec(function()
         box.ctl.promote()
     end)
     g.server_1:wait_synchro_queue_owner()
     g.server_2:wait_synchro_queue_owner(g.server_1:instance_id())
-end)
 
-g.test_wal_interfering_demote = function(g)
     start_wal_interfering_test(g.server_1, g.server_2)
 
     local ok, err = g.server_1:exec(function()
@@ -273,7 +260,7 @@ end
 
 -- Test interfering demotion for election_mode = 'off'
 -- while in txn_limbo delay
-g.before_test('test_limbo_empty_interfering_demote', function(g)
+g.test_limbo_empty_interfering_demote = function(g)
     local wal_write_count = get_wal_write_count(g.server_2)
     local raft_term = get_raft_term(g.server_2)
 
@@ -282,10 +269,8 @@ g.before_test('test_limbo_empty_interfering_demote', function(g)
     end)
     g.server_1:wait_synchro_queue_owner()
     wait_promote(g.server_2, wal_write_count, raft_term)
-end)
 
-g.test_limbo_empty_interfering_demote = function(g)
-    local wal_write_count = get_wal_write_count(g.server_2)
+    wal_write_count = get_wal_write_count(g.server_2)
     local f = g.server_1:exec(function()
         box.error.injection.set('ERRINJ_TXN_LIMBO_EMPTY_DELAY', true)
         local f = require('fiber').new(box.ctl.demote)
@@ -301,7 +286,7 @@ g.test_limbo_empty_interfering_demote = function(g)
 end
 
 -- Test failing box_wait_limbo_acked in box_promote for election_mode = 'off'
-g.before_test('test_fail_limbo_acked_promote', function(g)
+g.test_fail_limbo_acked_promote = function(g)
     g.server_1:box_config({
         replication_synchro_quorum = 2,
     })
@@ -322,9 +307,7 @@ g.before_test('test_fail_limbo_acked_promote', function(g)
     g.server_3 = g.cluster:build_and_add_server(
         {alias = 'server_3', box_cfg = cfg})
     g.server_3:start()
-end)
 
-g.test_fail_limbo_acked_promote = function(g)
     g.server_2:exec(function()
         box.error.injection.set('ERRINJ_WAL_DELAY', true)
     end)
