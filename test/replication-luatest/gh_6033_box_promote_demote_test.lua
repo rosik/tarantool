@@ -95,14 +95,17 @@ g.test_raft_leader_promote = function(g)
     g.server_1:box_config({election_mode = 'manual'})
 
     g.server_1:exec(function()
-        box.error.injection.set('ERRINJ_BOX_RAFT_SYNCHRO_QUEUE_DELAY', true)
+        box.error.injection.set('ERRINJ_WAL_DELAY_COUNTDOWN', 2)
         box.ctl.promote()
+        while box.error.injection.get("ERRINJ_WAL_DELAY") ~= true do
+            require('fiber').sleep(0.01)
+        end
     end)
     g.server_1:wait_election_state('leader')
 
     local ok = g.server_1:exec(function()
         local ok = pcall(box.ctl.promote)
-        box.error.injection.set('ERRINJ_BOX_RAFT_SYNCHRO_QUEUE_DELAY', false)
+        box.error.injection.set('ERRINJ_WAL_DELAY', false)
         return ok
     end)
     luatest.assert(ok, 'error while promoting raft leader')
