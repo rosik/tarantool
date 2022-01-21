@@ -291,61 +291,27 @@ end
 -- Test failing box_wait_limbo_acked in box_promote for election_mode = 'off'
 g.test_fail_limbo_acked_promote = function(g)
     g.server_1:box_config({
-        replication_synchro_quorum = 2,
-    })
-    g.server_2:box_config({
-        read_only = true,
-        replication_synchro_quorum = 2,
-    })
-
-    local cfg = {
         replication_synchro_quorum = 3,
-        replication_timeout = 0.1,
-        replication = {
-            helpers.instance_uri('server_', 1),
-            helpers.instance_uri('server_', 2),
-        },
-    }
+    })
 
-    g.server_3 = g.cluster:build_and_add_server(
-        {alias = 'server_3', box_cfg = cfg})
-    g.server_3:start()
-
-    g.server_2:exec(function()
-        box.error.injection.set('ERRINJ_WAL_DELAY', true)
-    end)
-
-    g.server_1:box_config({
-        replication = {
-            helpers.instance_uri('server_', 3)
-        }
+    g.server_2:box_config({
+        replication_synchro_quorum = 3,
     })
 
     local wal_write_count = get_wal_write_count(g.server_1)
-    g.server_3:exec(function()
+    g.server_2:exec(function()
         box.ctl.promote()
         local s = box.schema.create_space('test', {is_sync = true})
         s:create_index('pk')
         require('fiber').create(s.replace, s, {1})
     end)
-
     g.server_1:wait_wal_write_count(wal_write_count + 6)
-    g.server_3:drop()
 
     local ok, err = g.server_1:exec(function()
         box.cfg{replication_synchro_timeout = 0.1}
         return pcall(box.ctl.promote)
     end)
-
-    g.server_2:exec(function()
-        box.error.injection.set('ERRINJ_WAL_DELAY', false)
-    end)
     luatest.assert(
         not ok and err.code == box.error.QUORUM_WAIT,
         'wait quorum failure not handled')
 end
-
-g.after_test('test_fail_limbo_acked_promote', function(g)
-    g.server_3:drop()
-    g.server_3 = nil
-end)
