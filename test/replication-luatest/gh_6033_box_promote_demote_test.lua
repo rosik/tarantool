@@ -138,13 +138,47 @@ g.test_manual_leader_demote = function(g)
     luatest.assert(ok, 'error while demoting leader in manual mode')
 end
 
+local wal_delay_start = function(server)
+    server:exec(function()
+        box.error.injection.set('ERRINJ_WAL_DELAY', true)
+    end)
+end
+
+local wal_delay_end = function(server)
+    server:exec(function()
+        box.error.injection.set('ERRINJ_WAL_DELAY', false)
+    end)
+end
+
+local promote_start = function(server)
+    local term = get_raft_term(server)
+    local f = server:exec(function()
+        local f = require('fiber').new(box.ctl.promote)
+        f:set_joinable(true)
+        return f:id()
+    end)
+    server:wait_election_term(term + 1)
+    return f
+end
+
+local join_fiber = function(server, fiber_id)
+    return server:exec(function(f)
+        return require('fiber').find(f):join()
+    end, {fiber_id})
+end
+
 -- Test that box_promote will return box.error.UNSUPPORTED
 -- when called while in promote already
 g.test_simultaneous_promote = function(g)
+    wal_delay_start(g.server_1)
+    local f = promote_start(g.server_1)
+
     local ok, err = g.server_1:exec(function()
-        require('fiber').create(box.ctl.promote)
         return pcall(box.ctl.promote)
     end)
+    wal_delay_end(g.server_1)
+    join_fiber(g.server_1, f)
+
     luatest.assert(
         not ok and err.code == box.error.UNSUPPORTED,
         'error while promoting while in promote')
@@ -153,10 +187,15 @@ end
 -- Test that box_demote will return box.error.UNSUPPORTED
 -- when called while in promote already
 g.test_simultaneous_demote = function(g)
+    wal_delay_start(g.server_1)
+    local f = promote_start(g.server_1)
+
     local ok, err = g.server_1:exec(function()
-        require('fiber').create(box.ctl.promote)
         return pcall(box.ctl.demote)
     end)
+    wal_delay_end(g.server_1)
+    join_fiber(g.server_1, f)
+
     luatest.assert(
         not ok and err.code == box.error.UNSUPPORTED,
         'error while demoting while in promote')
