@@ -8,6 +8,8 @@ local log = require('log')
 local g = t.group('gh-6036', {{engine = 'memtx'}, {engine = 'vinyl'}})
 
 g.before_each(function(cg)
+    pcall(log.cfg, {level = 6})
+
     local engine = cg.params.engine
 
     cg.cluster = cluster:new({})
@@ -35,7 +37,6 @@ g.before_each(function(cg)
     cg.cluster:add_server(cg.r2)
     cg.cluster:add_server(cg.r3)
     cg.cluster:start()
-    -- test_run:wait_fullmesh(SERVERS)
 end)
 
 
@@ -61,6 +62,7 @@ g.test_qsync_order = function(cg)
     helpers:wait_vclock(cg.r2, vclock)
     helpers:wait_vclock(cg.r3, vclock)
 
+    log.info("wait_vclock")
     --
     -- Drop connection between r1 and r2.
     local repl = json.encode({
@@ -100,9 +102,9 @@ g.test_qsync_order = function(cg)
     -- enter election_replica3 as well just to be sure the PROMOTE
     -- reached it.
     cg.r2:eval("box.ctl.promote()")
-    t.helpers.retrying({}, function()
-        return cg.r2:eval("return box.info.synchro.queue.waiters") > 0
-    end)
+    --t.helpers.retrying({}, function()
+    --    return cg.r2:eval("return box.info.synchro.queue.waiters") > 0
+    --end)
     --cg.r2:eval("box.space.test:insert{2}")
 
     --
