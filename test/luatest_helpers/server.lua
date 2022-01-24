@@ -126,7 +126,7 @@ end
 
 function Server:wait_election_term(term)
     return wait_cond('election term', self, self.exec, self, function(term)
-        return box.info.election.term == term
+        return box.info.election.term >= term
     end, {term})
 end
 
