@@ -49,6 +49,7 @@ txn_limbo_create(struct txn_limbo *limbo)
 	limbo->promote_greatest_term = 0;
 	latch_create(&limbo->promote_latch);
 	limbo->promote_latch_wait_cnt = 0;
+	limbo->promote_is_latched = false;
 	limbo->confirmed_lsn = 0;
 	limbo->rollback_count = 0;
 	limbo->is_in_rollback = false;

@@ -153,9 +153,13 @@ struct txn_limbo {
 	 */
 	struct latch promote_latch;
 	/**
-	 * Latch owners/waiters stat.
+	 * Latch waiters stat.
 	 */
 	uint64_t promote_latch_wait_cnt;
+	/**
+	 * Latch users stat.
+	 */
+	bool promote_is_latched;
 	/**
 	 * Maximal LSN gathered quorum and either already confirmed in WAL, or
 	 * whose confirmation is in progress right now. Any attempt to confirm
@@ -321,6 +325,7 @@ txn_limbo_begin(struct txn_limbo *limbo)
 	limbo->promote_latch_wait_cnt++;
 	latch_lock(&limbo->promote_latch);
 	limbo->promote_latch_wait_cnt--;
+	limbo->promote_is_latched = true;
 }
 
 /** Commit a synchronous replication request. */
@@ -328,6 +333,7 @@ static inline void
 txn_limbo_commit(struct txn_limbo *limbo)
 {
 	latch_unlock(&limbo->promote_latch);
+	limbo->promote_is_latched = false;
 }
 
 /** Rollback a synchronous replication request. */
