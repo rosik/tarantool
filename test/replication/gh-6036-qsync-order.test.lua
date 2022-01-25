@@ -64,7 +64,7 @@ test_run:switch("election_replica2")
 box.ctl.promote()
 test_run:switch("election_replica3")
 test_run:wait_cond(function()                   \
-    return box.info.synchro.queue.waiters > 0   \
+    return box.info.synchro.queue.latched       \
 end)
 test_run:switch("election_replica2")
 box.space.test:insert{2}

@@ -110,7 +110,7 @@ test_run:switch("election_replica3")
  | - true
  | ...
 test_run:wait_cond(function()                   \
-    return box.info.synchro.queue.waiters > 0   \
+    return box.info.synchro.queue.latched       \
 end)
  | ---
  | - true
