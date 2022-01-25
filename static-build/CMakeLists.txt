@@ -211,7 +211,7 @@ if (APPLE)
     # So we need to find library and header and
     # copy it locally
     find_path(UNWIND_INCLUDE_DIR libunwind.h)
-    find_library(UNWIND_LIBRARY libunwind.dylib
+    find_library(UNWIND_LIBRARY libunwind.tbd
         PATH_SUFFIXES system
     )
 
