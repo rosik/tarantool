@@ -102,24 +102,26 @@ g.test_qsync_order = function(cg)
     -- enter election_replica3 as well just to be sure the PROMOTE
     -- reached it.
     cg.r2:eval("box.ctl.promote()")
-    --t.helpers.retrying({}, function()
-    --    return cg.r2:eval("return box.info.synchro.queue.waiters") > 0
-    --end)
-    --cg.r2:eval("box.space.test:insert{2}")
+    t.helpers.retrying({}, function()
+        return cg.r3:eval("return box.info.synchro.queue.latched")
+    end)
+    cg.r2:eval("box.space.test:insert{2}")
 
     --
     -- The election_replica1 node has no clue that there is a new leader
     -- and continue writing data with obsolete term. Since election_replica3
     -- is delayed now the INSERT won't proceed yet but get queued.
-    --cg.r1:exec(function() box.space.test:insert{3} end)
+    cg.r1:eval("box.space.test:insert{3}")
 
     --
     -- Finally enable election_replica3 back. Make sure the data from new
     -- election_replica2 leader get writing while old leader's data ignored.
     cg.r3:eval("box.error.injection.set('ERRINJ_WAL_DELAY', false)")
-    --t.helpers.retrying({}, function()
-    --    return cg.r3:eval("return box.space.test:get{2}") ~= nil
-    --end)
+    t.helpers.retrying({}, function()
+        return cg.r3:eval("return box.space.test:get{2}") ~= nil
+    end)
+
+    --- >8 --- ORIGINAL TEST --- >8 ---
 
     -- --
     -- -- gh-6036: verify that terms are locked when we're inside journal
