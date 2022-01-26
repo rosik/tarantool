@@ -1785,6 +1785,7 @@ box_issue_promote(uint32_t prev_leader_id, int64_t promote_lsn)
 	struct raft *raft = box_raft();
 	assert(raft->volatile_term == raft->term);
 	assert(promote_lsn >= 0);
+	txn_limbo_begin(&txn_limbo);
 	txn_limbo_write_promote(&txn_limbo, promote_lsn,
 				raft->term);
 	struct synchro_request req = {
@@ -1794,7 +1795,8 @@ box_issue_promote(uint32_t prev_leader_id, int64_t promote_lsn)
 		.lsn = promote_lsn,
 		.term = raft->term,
 	};
-	txn_limbo_process(&txn_limbo, &req);
+	txn_limbo_apply(&txn_limbo, &req);
+	txn_limbo_commit(&txn_limbo);
 	assert(txn_limbo_is_empty(&txn_limbo));
 }
 
@@ -1807,6 +1809,7 @@ box_issue_demote(uint32_t prev_leader_id, int64_t promote_lsn)
 {
 	assert(box_raft()->volatile_term == box_raft()->term);
 	assert(promote_lsn >= 0);
+	txn_limbo_begin(&txn_limbo);
 	txn_limbo_write_demote(&txn_limbo, promote_lsn,
 				box_raft()->term);
 	struct synchro_request req = {
@@ -1816,7 +1819,8 @@ box_issue_demote(uint32_t prev_leader_id, int64_t promote_lsn)
 		.lsn = promote_lsn,
 		.term = box_raft()->term,
 	};
-	txn_limbo_process(&txn_limbo, &req);
+	txn_limbo_apply(&txn_limbo, &req);
+	txn_limbo_commit(&txn_limbo);
 	assert(txn_limbo_is_empty(&txn_limbo));
 }
 
