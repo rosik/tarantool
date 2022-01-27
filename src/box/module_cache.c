@@ -265,6 +265,7 @@ static void
 module_attr_fill(struct module_attr *attr, struct stat *st)
 {
 	memset(attr, 0, sizeof(*attr));
+	if (!st) return;
 
 	attr->st_dev	= (uint64_t)st->st_dev;
 	attr->st_ino	= (uint64_t)st->st_ino;
@@ -304,6 +305,13 @@ module_new(const char *package, size_t package_len,
 
 	memcpy(m->package, package, package_len);
 	m->package[package_len] = 0;
+
+	if (package_len == 0) {
+		m->handle = dlopen(0, RTLD_NOW);
+		module_attr_fill(&m->attr, NULL);
+		module_ref(m);
+		return m;
+	}
 
 	const char *tmpdir = getenv("TMPDIR");
 	if (tmpdir == NULL)

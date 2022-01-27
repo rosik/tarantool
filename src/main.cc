@@ -795,3 +795,11 @@ main(int argc, char **argv)
 	tarantool_free();
 	return exit_code;
 }
+
+extern "C"
+int
+easy()
+{
+	printf("it's easy\n");
+	return 0;
+}
